@@ -15,6 +15,8 @@ public class HexGridLayout : MonoBehaviour
 
     public Material material;
 
+    public GameObject hex;
+
     private readonly float sqrt3 = Mathf.Sqrt(3);
 
     private void OnEnable()
@@ -32,6 +34,7 @@ public class HexGridLayout : MonoBehaviour
             for (int x = 0; x < gridSize.x; x++)
             {
                 // TODO: instead of generating meshes, use prefabs (ground, water, etc.)
+                
                 GameObject tile = new GameObject($"Hex {x},{y}", typeof(HexRenderer));
                 tile.transform.position = GetPositionForHexFromCoordinate(new Vector2Int(x, y));
 
@@ -45,6 +48,8 @@ public class HexGridLayout : MonoBehaviour
                 hexRenderer.DrawMesh();
 
                 tile.transform.SetParent(transform, true);
+                
+                //Instantiate(hex, GetPositionForHexFromCoordinate(new Vector2Int(x, y)), Quaternion.identity);
             }
         }
     }

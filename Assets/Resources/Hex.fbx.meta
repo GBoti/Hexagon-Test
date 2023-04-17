@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 7f9dcb70c6ec8f6418fabd54ee65f2b8
+guid: d8db4467962d1bd41bb2167745348282
 ModelImporter:
   serializedVersion: 21300
   internalIDToNameTable: []
@@ -8,9 +8,9 @@ ModelImporter:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
       name: Paint - Light Gray
-    second: {fileID: 2100000, guid: 799c3a09b7de7cf4a8126fe4d9e327d6, type: 2}
+    second: {fileID: 10303, guid: 0000000000000000f000000000000000, type: 0}
   materials:
-    materialImportMode: 2
+    materialImportMode: 1
     materialName: 0
     materialSearch: 1
     materialLocation: 1
@@ -81,7 +81,7 @@ ModelImporter:
     blendShapeNormalImportMode: 1
     normalSmoothingSource: 0
   referencedClips: []
-  importAnimation: 1
+  importAnimation: 0
   humanDescription:
     serializedVersion: 3
     human: []

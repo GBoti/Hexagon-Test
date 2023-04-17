@@ -7,7 +7,6 @@ using UnityEngine.UI;
 public class TestButton : MonoBehaviour
 {
     [SerializeField] private HexGridLayout grid;
-    [SerializeField] private HexRenderer testHex;
 
     void Start()
     {
@@ -15,9 +14,6 @@ public class TestButton : MonoBehaviour
         button.onClick.AddListener(() =>
         {
             grid.LayoutGrid();
-
-            // This hex can be used to test and create prefabs, (ground, water, etc.)
-            testHex.DrawMesh();
         });
     }
 }

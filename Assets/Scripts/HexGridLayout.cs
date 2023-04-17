@@ -8,16 +8,18 @@ public class HexGridLayout : MonoBehaviour
     public Vector2Int gridSize;
 
     [Header("Tile Settings")]
-    public float outerSize = 1f;
-    public float innerSize = 0f;
-    public float height = 0.5f;
+    public float size = 1f;
     public bool isFlatTopped;
 
-    public Material material;
+    public Material ground;
+    public Material water;
+    public Material backGround;
 
     public GameObject hex;
 
     private readonly float sqrt3 = Mathf.Sqrt(3);
+    private List<Hex> hexes = new List<Hex>();
+    private List<GameObject> backgroundHexes = new List<GameObject>();
 
     private void OnEnable()
     {
@@ -33,23 +35,57 @@ public class HexGridLayout : MonoBehaviour
         {
             for (int x = 0; x < gridSize.x; x++)
             {
-                // TODO: instead of generating meshes, use prefabs (ground, water, etc.)
-                
-                GameObject tile = new GameObject($"Hex {x},{y}", typeof(HexRenderer));
-                tile.transform.position = GetPositionForHexFromCoordinate(new Vector2Int(x, y));
+                GameObject tile = Instantiate(hex, GetPositionForHexFromCoordinate(new Vector2Int(x, y)), transform.rotation * Quaternion.Euler(-90f, 0f, 0f));
+                tile.transform.localScale = new Vector3(size*0.2f, size*0.2f, size*0.2f);
+                tile.GetComponent<MeshRenderer>().material = ground;
+                Hex gridHex = new Hex(new Vector2Int(x, y), tile);
+                // Current hex will go in the current = y * gridSize.x + x; slot in hexes
+                Int current = y * gridSize.x + x;
+                // Need to add the already existing hexes, but need to check if they exist
+                // (In the case of hex 0,0 there will be no other existing hexes)
+                // In case of a non-existent hex, set the value to null
+                // Already existing hexes are: Left, Top-left, Top-right, since
+                // the grid is built from the top-left to the right then down.
+                // the left is easy allways current-1, except when x == 0, then it's null
+                if(x == 0){
+                    gridHex.AddNeighbour(null);
+                } else {
+                    gridHex.AddNeighbour(hexes(current - 1));
+                    // Need to add them as neighbours to each other so both of them know of the connection
+                    hexes(current - 1).AddNeighbour(gridHex);
+                }
+                // the top hexes are different for even and odd rows, if y == 0 then they are both null
+                if(y == 0){
+                    gridHex.AddNeighbour(null);
+                    gridHex.AddNeighbour(null);
+                } else if(y % 2){ //even
+                    // in this case the needed hexes are: x-1,y-1 and x,y-1
+                    // in relation to the current hex they are up a row so: -gridSize.x
+                    // one of them is "directly" above the current, the other is to the left so: -0, -1
+                    gridHex.AddNeighbour(hexes(current - gridSize.x));
+                    hexes(current - gridSize.x).AddNeighbour(gridHex);
 
-                HexRenderer hexRenderer = tile.GetComponent<HexRenderer>();
-                hexRenderer.isFlatTopped = isFlatTopped;
-                hexRenderer.outerSize = outerSize;
-                hexRenderer.innerSize = innerSize;
-                hexRenderer.height = height;
-                hexRenderer.Initialize();
-                hexRenderer.SetMaterial(material);
-                hexRenderer.DrawMesh();
+                    gridHex.AddNeighbour(hexes(current - gridSize.x - 1));
+                    hexes(current - gridSize.x - 1).AddNeighbour(gridHex);
+                } else { //odd
+                    // in this case the needed hexes are: x,y-1 and x+1,y-1
+                    // in relation to the current hex they are up a row so: -gridSize.x
+                    // one of them is "directly" above the current, the other is to the right so: +0, +1
+                    gridHex.AddNeighbour(hexes(current - gridSize.x));
+                    hexes(current - gridSize.x).AddNeighbour(gridHex);
 
-                tile.transform.SetParent(transform, true);
-                
-                //Instantiate(hex, GetPositionForHexFromCoordinate(new Vector2Int(x, y)), Quaternion.identity);
+                    gridHex.AddNeighbour(hexes(current - gridSize.x + 1));
+                    hexes(current - gridSize.x + 1).AddNeighbour(gridHex);
+                }
+                // The other neighbours will be added as we build the grid.
+
+                hexes.Add(gridHex);
+
+                tile = Instantiate(hex, GetPositionForHexFromCoordinate(new Vector2Int(x, y)), transform.rotation * Quaternion.Euler(-90f, 0f, 0f));
+                tile.transform.localScale = new Vector3(size*0.21f, size*0.21f, size*0.21f);
+                tile.transform.position =  GetPositionForHexFromCoordinate(new Vector2Int(x, y)) + new Vector3(0f, -0.1f, 0f); 
+                tile.GetComponent<MeshRenderer>().material = backGround;
+                backgroundHexes.Add(tile);
             }
         }
     }
@@ -58,10 +94,14 @@ public class HexGridLayout : MonoBehaviour
     {
         Debug.Log("Destroying grid...");
 
-        // TODO: collect children in a list instead
-        foreach (Transform child in transform)
+        foreach (Hex child in hexes)
         {
-            Destroy(child.gameObject);
+            Destroy(child.DisplayHex);
+        }
+
+        foreach (GameObject child in backgroundHexes)
+        {
+            Destroy(child);
         }
     }
 
@@ -78,36 +118,20 @@ public class HexGridLayout : MonoBehaviour
         float horizontalDistance;
         float verticalDistance;
         float offset;
-        float size = outerSize;
+        float hexSize = size;
 
-        if (!isFlatTopped)
-        {
-            shouldOffset = (row % 2) == 0;
-            width = sqrt3 * size;
-            height = 2f * size;
+        shouldOffset = (row % 2) == 0;
+        width = sqrt3 * hexSize;
+        height = 2f * hexSize;
 
-            horizontalDistance = width;
-            verticalDistance = height * (3f / 4f);
+        horizontalDistance = width;
+        verticalDistance = height * (3f / 4f);
 
-            offset = shouldOffset ? width / 2 : 0;
+        offset = shouldOffset ? width / 2 : 0;
 
-            xPosition = column * horizontalDistance + offset;
-            yPosition = row * verticalDistance;
-        }
-        else
-        {
-            shouldOffset = (column % 2) == 0;
-            width = 2f * size;
-            height = sqrt3 * size;
-
-            horizontalDistance = width * (3f / 4f);
-            verticalDistance = height;
-
-            offset = shouldOffset ? height / 2 : 0;
-            xPosition = column / horizontalDistance;
-            yPosition = row * verticalDistance - offset;
-        }
-
+        xPosition = column * horizontalDistance + offset;
+        yPosition = row * verticalDistance;
+        
         return new Vector3(xPosition, 0, -yPosition);
     }
 }

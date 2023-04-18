@@ -14,6 +14,8 @@ public class HexGridLayout : MonoBehaviour
     public Material ground;
     public Material water;
     public Material backGround;
+    public Material selected;
+    public Material neighbour;
 
     public GameObject hex;
 
@@ -38,9 +40,10 @@ public class HexGridLayout : MonoBehaviour
                 GameObject tile = Instantiate(hex, GetPositionForHexFromCoordinate(new Vector2Int(x, y)), transform.rotation * Quaternion.Euler(-90f, 0f, 0f));
                 tile.transform.localScale = new Vector3(size*0.2f, size*0.2f, size*0.2f);
                 tile.GetComponent<MeshRenderer>().material = ground;
-                Hex gridHex = new Hex(new Vector2Int(x, y), tile);
+                Hex gridHex = new Hex(new Vector2Int(x, y), tile, ground, selected, neighbour);
                 // Current hex will go in the current = y * gridSize.x + x; slot in hexes
-                Int current = y * gridSize.x + x;
+                int current = y * gridSize.x + x;
+                Debug.Log($"Current place in list: {current}");
                 // Need to add the already existing hexes, but need to check if they exist
                 // (In the case of hex 0,0 there will be no other existing hexes)
                 // In case of a non-existent hex, set the value to null
@@ -50,32 +53,32 @@ public class HexGridLayout : MonoBehaviour
                 if(x == 0){
                     gridHex.AddNeighbour(null);
                 } else {
-                    gridHex.AddNeighbour(hexes(current - 1));
+                    gridHex.AddNeighbour(hexes[current - 1]);
                     // Need to add them as neighbours to each other so both of them know of the connection
-                    hexes(current - 1).AddNeighbour(gridHex);
+                    hexes[current - 1].AddNeighbour(gridHex);
                 }
                 // the top hexes are different for even and odd rows, if y == 0 then they are both null
                 if(y == 0){
                     gridHex.AddNeighbour(null);
                     gridHex.AddNeighbour(null);
-                } else if(y % 2){ //even
+                } else if(y % 2 == 0){ //even
                     // in this case the needed hexes are: x-1,y-1 and x,y-1
                     // in relation to the current hex they are up a row so: -gridSize.x
                     // one of them is "directly" above the current, the other is to the left so: -0, -1
-                    gridHex.AddNeighbour(hexes(current - gridSize.x));
-                    hexes(current - gridSize.x).AddNeighbour(gridHex);
+                    gridHex.AddNeighbour(hexes[current - gridSize.x]);
+                    hexes[current - gridSize.x].AddNeighbour(gridHex);
 
-                    gridHex.AddNeighbour(hexes(current - gridSize.x - 1));
-                    hexes(current - gridSize.x - 1).AddNeighbour(gridHex);
+                    gridHex.AddNeighbour(hexes[current - gridSize.x - 1]);
+                    hexes[current - gridSize.x - 1].AddNeighbour(gridHex);
                 } else { //odd
                     // in this case the needed hexes are: x,y-1 and x+1,y-1
                     // in relation to the current hex they are up a row so: -gridSize.x
                     // one of them is "directly" above the current, the other is to the right so: +0, +1
-                    gridHex.AddNeighbour(hexes(current - gridSize.x));
-                    hexes(current - gridSize.x).AddNeighbour(gridHex);
+                    gridHex.AddNeighbour(hexes[current - gridSize.x]);
+                    hexes[current - gridSize.x].AddNeighbour(gridHex);
 
-                    gridHex.AddNeighbour(hexes(current - gridSize.x + 1));
-                    hexes(current - gridSize.x + 1).AddNeighbour(gridHex);
+                    gridHex.AddNeighbour(hexes[current - gridSize.x + 1]);
+                    hexes[current - gridSize.x + 1].AddNeighbour(gridHex);
                 }
                 // The other neighbours will be added as we build the grid.
 

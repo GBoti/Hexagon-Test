@@ -11,6 +11,7 @@ public class Hex : MonoBehaviour
     private Material basic;
     private Material selected;
     private Material neighbour;
+    private Material backGround;
     private bool showNeighbours;
     private string terrain;
 
@@ -29,29 +30,34 @@ public class Hex : MonoBehaviour
         get => neighbours;
     }
 
-    public void InitiateHex(Vector2Int iC, Material b, Material s, Material n){
+    public Material Basic{
+        set => basic = value;
+        get => basic;
+    }
+    public void InitiateHex(Vector2Int iC, Material b, Material s, Material n, Material bG){
         indexCoordinates = iC;
         neighbours = new List<Hex>();
         showNeighbours = true;
         basic = b;
         selected = s;
         neighbour = n;
+        backGround = bG;
     }
 
     public void ToggleHighlight(){
         if(showNeighbours){
-            SetMaterial(selected);
+            SetBackgroundMaterial(selected);
             foreach(Hex n in neighbours){
                 if (n != null){
-                    n.SetMaterial(neighbour);
+                    n.SetBackgroundMaterial(neighbour);
                 }
             }
             showNeighbours = false;
         } else if (!showNeighbours){
-            SetMaterial(basic);
+            SetBackgroundMaterial(backGround);
             foreach(Hex n in neighbours){
                 if (n != null){
-                    n.SetMaterial(basic);
+                    n.SetBackgroundMaterial(backGround);
                 }
             }
             showNeighbours = true;
@@ -60,6 +66,10 @@ public class Hex : MonoBehaviour
 
     public void SetMaterial(Material mat){
         gameObject.GetComponent<MeshRenderer>().material = mat;
+    }
+
+    public void SetBackgroundMaterial(Material mat){
+        transform.GetChild(0).gameObject.GetComponent<MeshRenderer>().material = mat;
     }
 
     public Material GetMaterial(){

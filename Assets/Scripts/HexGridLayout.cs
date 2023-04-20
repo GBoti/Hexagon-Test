@@ -46,7 +46,7 @@ public class HexGridLayout : MonoBehaviour
                 tile.transform.localRotation *= Quaternion.Euler(-90f, 0f, 0f);
                 tile.GetComponent<MeshRenderer>().material = ground;
                 tile.Terrain = "ground";
-                tile.InitiateHex(new Vector2Int(x,y), ground, selected, neighbour);
+                tile.InitiateHex(new Vector2Int(x,y), ground, selected, neighbour, backGround);
                 // Current hex will go in the current = y * gridSize.x + x; slot in hexes
                 int current = y * gridSize.x + x;
                 Debug.Log($"Current place in list: {current}");
@@ -123,9 +123,14 @@ public class HexGridLayout : MonoBehaviour
                 waterNeighbours++;
             }
         }
+
         if(groundNeighbours/h.Neighbours.Count*100 > 80){
             waterChance += 20;
             groundChance -= 20;
+        }
+        if(waterNeighbours >= 3){
+            waterChance -= 30;
+            groundChance += 30;
         }
         if(waterNeighbours == 6){
             waterChance = 100;
@@ -137,9 +142,11 @@ public class HexGridLayout : MonoBehaviour
         if(num <= groundChance){
             h.SetMaterial(ground);
             h.Terrain = "ground";
+            h.Basic = ground;
         } else if (num <= groundChance + waterChance){
             h.SetMaterial(water);
             h.Terrain = "water";
+            h.Basic = water;
         }
     }
 

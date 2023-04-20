@@ -11,44 +11,59 @@ public class Hex : MonoBehaviour
     private Material basic;
     private Material selected;
     private Material neighbour;
-
-    [Header("Neighbour test")]
-    public bool showNeighbours;
+    private bool showNeighbours;
+    private string terrain;
 
     public Vector2Int IndexCoordinates{
         set => indexCoordinates = value;
         get => indexCoordinates;
     }
 
-    public void initiateHex(Vector2Int iC, Material b, Material s, Material n){
+    public string Terrain{
+        set => terrain = value;
+        get => terrain;
+    }
+
+    public List<Hex> Neighbours{
+        set => neighbours = value;
+        get => neighbours;
+    }
+
+    public void InitiateHex(Vector2Int iC, Material b, Material s, Material n){
         indexCoordinates = iC;
         neighbours = new List<Hex>();
-        showNeighbours = false;
+        showNeighbours = true;
         basic = b;
         selected = s;
         neighbour = n;
     }
 
-    void Update(){
+    public void ToggleHighlight(){
         if(showNeighbours){
-            setMaterial(selected);
+            SetMaterial(selected);
             foreach(Hex n in neighbours){
                 if (n != null){
-                    n.setMaterial(neighbour);
+                    n.SetMaterial(neighbour);
                 }
             }
-        } else { // update sorrend hülyegyerek!!!!!!!!!!!!!!!!!!!!!!!!!!
-            setMaterial(basic);
+            showNeighbours = false;
+        } else if (!showNeighbours){
+            SetMaterial(basic);
             foreach(Hex n in neighbours){
                 if (n != null){
-                    n.setMaterial(basic);
+                    n.SetMaterial(basic);
                 }
             }
+            showNeighbours = true;
         }
     }
 
-    public void setMaterial(Material mat){
+    public void SetMaterial(Material mat){
         gameObject.GetComponent<MeshRenderer>().material = mat;
+    }
+
+    public Material GetMaterial(){
+        return gameObject.GetComponent<MeshRenderer>().material;
     }
 
     public void AddNeighbour(Hex nb){

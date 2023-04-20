@@ -9,7 +9,6 @@ public class HexGridLayout : MonoBehaviour
 
     [Header("Tile Settings")]
     public float size = 1f;
-    public bool isFlatTopped;
 
     public Material ground;
     public Material water;
@@ -37,10 +36,12 @@ public class HexGridLayout : MonoBehaviour
         {
             for (int x = 0; x < gridSize.x; x++)
             {
-                GameObject tile = Instantiate(hex, GetPositionForHexFromCoordinate(new Vector2Int(x, y)), transform.rotation * Quaternion.Euler(-90f, 0f, 0f));
+                Hex tile = Instantiate(hex, GetPositionForHexFromCoordinate(new Vector2Int(x, y)), transform.rotation).GetComponent<Hex>();
+                tile.transform.SetParent(gameObject.transform);
                 tile.transform.localScale = new Vector3(size*0.2f, size*0.2f, size*0.2f);
+                tile.transform.localRotation *= Quaternion.Euler(-90f, 0f, 0f);
                 tile.GetComponent<MeshRenderer>().material = ground;
-                Hex gridHex = new Hex(new Vector2Int(x, y), tile, ground, selected, neighbour);
+                tile.initiateHex(new Vector2Int(x,y), ground, selected, neighbour);
                 // Current hex will go in the current = y * gridSize.x + x; slot in hexes
                 int current = y * gridSize.x + x;
                 Debug.Log($"Current place in list: {current}");
@@ -50,45 +51,60 @@ public class HexGridLayout : MonoBehaviour
                 // Already existing hexes are: Left, Top-left, Top-right, since
                 // the grid is built from the top-left to the right then down.
                 // the left is easy allways current-1, except when x == 0, then it's null
-                if(x == 0){
-                    gridHex.AddNeighbour(null);
-                } else {
-                    gridHex.AddNeighbour(hexes[current - 1]);
-                    // Need to add them as neighbours to each other so both of them know of the connection
-                    hexes[current - 1].AddNeighbour(gridHex);
+                
+                if ( x != 0 ){
+                    for(int i = 0; i < hexes.Count; i++){
+                        if(hexes[i].IndexCoordinates.x == (x - 1) && hexes[i].IndexCoordinates.y == y){
+                            Debug.Log($"{hexes[i].IndexCoordinates}, {tile.IndexCoordinates}");
+                            tile.AddNeighbour(hexes[i]);
+                            hexes[i].AddNeighbour(tile);
+                        }
+                    }
+                    /*
+                    foreach(Hex h in hexes){
+                        if(h.IndexCoordinates.x == x - 1 && h.IndexCoordinates.y == y){
+                            tile.AddNeighbour(h);
+                            h.AddNeighbour(tile);
+                        }
+                    }
+                    */
                 }
-                // the top hexes are different for even and odd rows, if y == 0 then they are both null
-                if(y == 0){
-                    gridHex.AddNeighbour(null);
-                    gridHex.AddNeighbour(null);
-                } else if(y % 2 == 0){ //even
-                    // in this case the needed hexes are: x-1,y-1 and x,y-1
-                    // in relation to the current hex they are up a row so: -gridSize.x
-                    // one of them is "directly" above the current, the other is to the left so: -0, -1
-                    gridHex.AddNeighbour(hexes[current - gridSize.x]);
-                    hexes[current - gridSize.x].AddNeighbour(gridHex);
-
-                    gridHex.AddNeighbour(hexes[current - gridSize.x - 1]);
-                    hexes[current - gridSize.x - 1].AddNeighbour(gridHex);
-                } else { //odd
-                    // in this case the needed hexes are: x,y-1 and x+1,y-1
-                    // in relation to the current hex they are up a row so: -gridSize.x
-                    // one of them is "directly" above the current, the other is to the right so: +0, +1
-                    gridHex.AddNeighbour(hexes[current - gridSize.x]);
-                    hexes[current - gridSize.x].AddNeighbour(gridHex);
-
-                    gridHex.AddNeighbour(hexes[current - gridSize.x + 1]);
-                    hexes[current - gridSize.x + 1].AddNeighbour(gridHex);
+                if (!(y == 0 || (x == 0 && y % 2 != 0))){
+                    foreach(Hex h in hexes){
+                        if(y % 2 == 0){
+                            if(h.IndexCoordinates.x == x && h.IndexCoordinates.y == y - 1){
+                                tile.AddNeighbour(h);
+                                h.AddNeighbour(tile);
+                            }
+                        }
+                        if(y % 2 != 0){
+                            if(h.IndexCoordinates.x == x - 1 && h.IndexCoordinates.y == y - 1){
+                                tile.AddNeighbour(h);
+                                h.AddNeighbour(tile);
+                            }
+                        }
+                    }
                 }
+                if (!(y == 0 || (x == ((y + 1) * gridSize.x) - 1 && y % 2 == 0))){
+                    foreach(Hex h in hexes){
+                        if(y % 2 == 0){
+                            if(h.IndexCoordinates.x == x + 1 && h.IndexCoordinates.y == y - 1){
+                                tile.AddNeighbour(h);
+                                h.AddNeighbour(tile);
+                            }
+                        }
+                        if(y % 2 != 0){
+                            if(h.IndexCoordinates.x == x && h.IndexCoordinates.y == y - 1){
+                                tile.AddNeighbour(h);
+                                h.AddNeighbour(tile);
+                            }
+                        }
+                    }
+                }
+                
                 // The other neighbours will be added as we build the grid.
 
-                hexes.Add(gridHex);
-
-                tile = Instantiate(hex, GetPositionForHexFromCoordinate(new Vector2Int(x, y)), transform.rotation * Quaternion.Euler(-90f, 0f, 0f));
-                tile.transform.localScale = new Vector3(size*0.21f, size*0.21f, size*0.21f);
-                tile.transform.position =  GetPositionForHexFromCoordinate(new Vector2Int(x, y)) + new Vector3(0f, -0.1f, 0f); 
-                tile.GetComponent<MeshRenderer>().material = backGround;
-                backgroundHexes.Add(tile);
+                hexes.Add(tile);
             }
         }
     }
@@ -99,13 +115,9 @@ public class HexGridLayout : MonoBehaviour
 
         foreach (Hex child in hexes)
         {
-            Destroy(child.DisplayHex);
+            Destroy(child.gameObject);
         }
-
-        foreach (GameObject child in backgroundHexes)
-        {
-            Destroy(child);
-        }
+        hexes.Clear();
     }
 
     private Vector3 GetPositionForHexFromCoordinate(Vector2Int coordinate)
